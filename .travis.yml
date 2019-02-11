@@ -1,57 +1,48 @@
 language: rust
 cache: cargo
-
 matrix:
   include:
-    # OS compat
-    - os: linux
-    - os: osx
-
-    # rustc version compat
-    - rust: 1.30.0 # oldest supported version, keep in sync with README.md
-    - rust: 1.30.0
-      env: DIST_SCCACHE=1
-    - rust: beta
-    - rust: nightly
-
-    # deployments
-    - env: DEPLOY=1 TARGET=x86_64-apple-darwin
-      script: cargo build --release --target $TARGET --features=all
-      os: osx
-    - env: DEPLOY=1 TARGET=x86_64-unknown-linux-musl OPENSSL_DIR=$HOME/openssl-musl
-      before_script: ./scripts/travis-musl-openssl.sh
-      script: cargo build --release --target $TARGET --features=all
-      addons:
-        apt:
-          packages:
-          - musl-tools
+  - os: linux
+  - os: osx
+  - rust: 1.30.0
+  - rust: 1.30.0
+    env: DIST_SCCACHE=1
+  - rust: beta
+  - rust: nightly
+  - env: DEPLOY=1 TARGET=x86_64-apple-darwin
+    script: cargo build --release --target $TARGET --features=all
+    os: osx
+  - env: DEPLOY=1 TARGET=x86_64-unknown-linux-musl OPENSSL_DIR=$HOME/openssl-musl
+    before_script: "./scripts/travis-musl-openssl.sh"
+    script: cargo build --release --target $TARGET --features=all
+    addons:
+      apt:
+        packages:
+        - musl-tools
   allow_failures:
-    - rust: nightly
-
+  - rust: nightly
 before_script:
-  - export EXTRA_FEATURES=
-  - if [[ "${TRAVIS_RUST_VERSION}" = "nightly" ]]; then export EXTRA_FEATURES="$EXTRA_FEATURES unstable"; fi
-  - if [[ "${DIST_SCCACHE}" = "1" ]]; then export EXTRA_FEATURES="$EXTRA_FEATURES dist-client dist-server"; fi
-
+- export EXTRA_FEATURES=
+- if [[ "${TRAVIS_RUST_VERSION}" = "nightly" ]]; then export EXTRA_FEATURES="$EXTRA_FEATURES
+  unstable"; fi
+- if [[ "${DIST_SCCACHE}" = "1" ]]; then export EXTRA_FEATURES="$EXTRA_FEATURES dist-client
+  dist-server"; fi
 script:
-  - cargo build --verbose --features="all ${EXTRA_FEATURES}"
-  - RUST_BACKTRACE=1 cargo test --all --verbose --no-default-features --features="${EXTRA_FEATURES}"
-  - RUST_BACKTRACE=1 cargo test --all --verbose --features="all ${EXTRA_FEATURES}"
-  # Requires PR #321
-  #- if [[ "${DIST_SCCACHE}" = "1" ]]; then RUST_BACKTRACE=1 cargo test --all --verbose --features="all dist-tests ${EXTRA_FEATURES}" test_dist_ -- --test-threads 1; fi
-
+- cargo build --verbose --features="all ${EXTRA_FEATURES}"
+- RUST_BACKTRACE=1 cargo test --all --verbose --no-default-features --features="${EXTRA_FEATURES}"
+- RUST_BACKTRACE=1 cargo test --all --verbose --features="all ${EXTRA_FEATURES}"
 before_deploy:
-  - "./scripts/prep_deploy.sh"
+- "./scripts/prep_deploy.sh"
 
 deploy:
   api_key:
-    secure: rF9ZCpzIJ+pYqxvS20omuTfQ5bN/W81malxwEyRobZc1OrcYK3Gdmq9wwxayx75PgDlXJvIMkuBrkRq1Mc1VprKOLmlg8yPjVm+5G1JySrpZ0yhs2+838gUJkdWESKtZRZ8xhKz2H1tK1a9WMXzWrW/hIBIWA2aZqC7hUTRvIyENE8hDec+7kTQCuNXkcsCL4mF9G77IPQhGR6CYj6Sg5j0u4NsIBiYnd3C218BUkZS15nE37Zj2o3C/ekQsUfAi8e3ALE6WEU+KDRccWT3/F8FMItxlJ5c2Wt4lUL5FC4+b5Vtz6sLBklKc8kex+ClFga5Hq6FDwBnotL8XsBZGiWPssdcZYVWtjHsXT1XeQOrtgdN+VN0IXP7/QzsEHSIADw9RE5S0F9RTKO+ghPL5YU1t7ZbWRqMy+AQDbFreIRftGWHyaRzmmxdea+XdhTMzv8Xyccakek+2HmrkvxC5KBtVVQUcjtf/mdEfF696N+DN4A+dkai15uk8C5vPGWDZF3SDlIOY23dOnMzMkC6qEFrzFjCwJ6mRKUhYI7mU4weMLekKq0dJa7xQuGNP7yuwQ4I+S/X00ukAcvNCLmWWjRRBxxeTVQJDwRdSepbzSkFqP6noopnOw6EIo6YV1EY9ipoX1ahaFVC8480uFFQI1BjVefTvFcflbCiSCerQECU=
-  file_glob: true
+    secure: PihbJggVxG7UbwrArb4DwDzWuy1+JUC4JbnFBRScKo4gjFgBn6y46Gjm58xk6aiSjveA6xKuecE6/kkGwlVD+bCkRZerjdYaG8QPzylD1OwlGilWafC+0KStPtczdLwlD7weYpMl4ArMaO4i5mSaAZYbqo2UBuzjbGp0jQ0UD32Z4e3YcltGVZ1jhfQRn0PNoQ3yylIom+WNZavBxsSsnjNvGOrMpydYOZwX92Mo7UaQyIvjVkVvh1AA7Bbimt1xaXJ2strdTRs8DhHt7doHvrFEZkK7nW8wOAy8oUfZIJQy9hzs8m2noF2SatCj8uc5qfFORAMAe8JmdrAT/aTmkX8lMRpjgsJBdayy+gjyMsyHJHpo6xdY6HNBwYPwEczLxmcSarK8Kwv8hdSIdI/9NeUr+/H4TDSnhXj9VAEUV+yHmWWG3+0BrbxVSGmr1LlJ834lSkLuyVFllSP7IxyxXfoCYZue2K4XJER6OL4UASI1VQHj5Vm9H+LFD39iq2cgT+IqcbxFEVIi+AvLYWWaIRYKGuQ64dLbJOHBAwHHgH/QhshA4T6KDSqvHjjiWlNw0t7ZZiGVnEdk8N3uQP72P3NnWcIAdU343YqDQZlIZB0lAO4fck4kzKWiryjiThirWDMV29GiBnl4zNQ5yfJnn2//K65u3b9img2+MttvnOE=
   file:
     - sccache-$TRAVIS_TAG-$TARGET.tar.gz
     - sccache-$TRAVIS_TAG-$TARGET.tar.gz.sha256
   on:
     condition: $DEPLOY = 1
     tags: true
+    repo: Jake-Shadle/sccache
   provider: releases
   skip_cleanup: true
