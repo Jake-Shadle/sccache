@@ -18,12 +18,12 @@ install:
 build_script:
 - cmd: cargo build %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
 - ps: ls -Recurse target
-- cmd: target/release/sccache.exe --help
+- cmd: target\release\sccache.exe --help
 
 test_script:
 - cmd: cargo test --all %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
 - ps: ls -Recurse target
-- cmd: target/release/sccache.exe --help
+- cmd: target\release\sccache.exe --help
 
 for:
 
