@@ -17,9 +17,17 @@ install:
 
 build_script:
 - cmd: cargo build %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
+- cmd: dir target
+- cmd: dir target/%target%
+- cmd: dir target/%target%/release
+- cmd: target/%target%/release/sccache.exe --help
 
 test_script:
 - cmd: cargo test --all %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
+- cmd: dir target
+- cmd: dir target/%target%
+- cmd: dir target/%target%/release
+- cmd: target/%target%/release/sccache.exe --help
 
 for:
 
@@ -56,7 +64,8 @@ for:
     - ps: |
           $NAME = "sccache-${env:APPVEYOR_REPO_TAG_NAME}-${env:TARGET}"
           New-Item -Path $NAME -ItemType directory
-          Copy-Item target/x86_64-pc-windows-msvc/release/sccache.exe "${NAME}/"
+          Copy-Item target/${env:TARGET}/release/sccache.exe "${NAME}/"
+          ${NAME}/sccache.exe --help
           Copy-Item LICENSE "${NAME}/"
           Copy-Item README.md "${NAME}/"
           7z a -ttar "${NAME}.tar" "${NAME}"
