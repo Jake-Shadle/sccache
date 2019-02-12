@@ -17,13 +17,9 @@ install:
 
 build_script:
 - cmd: cargo build %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
-- ps: ls -Recurse target
-- cmd: target\release\sccache.exe --help
 
 test_script:
 - cmd: cargo test --all %RELEASE% --verbose --features="all %EXTRA_FEATURES%"
-- ps: ls -Recurse target
-- cmd: target\release\sccache.exe --help
 
 for:
 
@@ -57,13 +53,13 @@ for:
     RELEASE: --release
 
   before_deploy:
+    # We need to rerun the build, due to `cargo test` overwriting the original sccache.exe
+    # with version with only the default features (this should be fast, just annoying)
+    - cmd: cargo build --release --features="all %EXTRA_FEATURES%"
     - ps: |
           $NAME = "sccache-${env:APPVEYOR_REPO_TAG_NAME}-${env:TARGET}"
           New-Item -Path $NAME -ItemType directory
-          target/release/sccache.exe --help
-          target/${env:TARGET}/release/sccache.exe --help
-          Copy-Item target/${env:TARGET}/release/sccache.exe "${NAME}/"
-          ${NAME}/sccache.exe --help
+          Copy-Item target/release/sccache.exe "${NAME}/"
           Copy-Item LICENSE "${NAME}/"
           Copy-Item README.md "${NAME}/"
           7z a -ttar "${NAME}.tar" "${NAME}"
